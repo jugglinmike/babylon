@@ -22,6 +22,7 @@ script:
   - 'if [ "$JOB" = "lint" ]; then yarn run lint && yarn run flow; fi'
   - 'if [ "$JOB" = "flow-test" ]; then make test-flow; fi'
   - 'if [ "$JOB" = "babel-test" ]; then make test-babel; fi'
+  - 'if [ "$JOB" = "test262-test" ]; then make test-test262; fi'
   - 'if [ "$JOB" = "test-coverage" ]; then yarn run test-coverage; fi'
 
 matrix:
@@ -35,6 +36,8 @@ matrix:
       env: JOB=babel-test
     - node_js: "lts/*"
       env: JOB=flow-test
+    - node_js: "lts/*"
+      env: JOB=test262-test
   allow_failures:
     - node_js: "lts/*"
       env: JOB=flow-test
