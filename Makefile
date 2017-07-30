@@ -34,7 +34,7 @@ test-flow:
 
 bootstrap-test262: clean
 	mkdir ./build
-	git clone --depth=1 https://github.com/tc39/test262.git ./build/test262
+	git clone https://github.com/tc39/test262.git ./build/test262
 	cd build/test262 && git checkout $(TEST262_COMMIT)
 
 test-test262:
