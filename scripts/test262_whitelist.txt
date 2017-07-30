@@ -1,5 +1,5 @@
 # This file lists tests that are known to produce incorrect results when parsed
-# with Babyline:
+# with Babylon:
 #
 # - Tests that are expected to parse successfully but for which Babylon reports
 #   a syntax error

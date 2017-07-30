@@ -100,5 +100,5 @@ Promise.all([utils.getTests(testDir), utils.getWhitelist(whitelistFile)])
   })
   .catch(function(err) {
     console.error(err);
-    process.statusCode = 1;
+    process.exitCode = 1;
   });
