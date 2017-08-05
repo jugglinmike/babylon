@@ -162,7 +162,7 @@ exports.runTest = function(test, plugins) {
     test.actualError = true;
   }
 
-  test.result = test.expectedError ^ test.actualError ? "fail" : "pass";
+  test.result = test.expectedError !== test.actualError ? "fail" : "pass";
 
   return test;
 };

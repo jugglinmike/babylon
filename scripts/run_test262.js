@@ -41,7 +41,7 @@ Promise.all([utils.getTests(testDir), utils.getWhitelist(whitelistFile)])
     const badnews = [];
     const badnewsDetails = [];
 
-    [
+    void [
       {
         tests: summary.disallowed.success,
         label:
