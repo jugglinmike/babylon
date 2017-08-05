@@ -139,11 +139,11 @@ exports.getTests = function(testDir) {
     .then(flatten);
 };
 
-exports.runTest = function(test) {
+exports.runTest = function(test, plugins) {
   const sourceType = test.isModule ? "module" : "script";
 
   try {
-    parse(test.content, { sourceType: sourceType });
+    parse(test.content, { sourceType: sourceType, plugins: plugins });
     test.actualError = false;
   } catch (err) {
     test.actualError = true;

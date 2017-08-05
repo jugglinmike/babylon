@@ -6,6 +6,7 @@ const utils = require("./run_test262_utils");
 
 const testDir = path.join(__dirname, "..", "build", "test262", "test");
 const whitelistFile = path.join(__dirname, "test262_whitelist.txt");
+const plugins = ["asyncGenerators", "objectRestSpread"];
 
 Promise.all([utils.getTests(testDir), utils.getWhitelist(whitelistFile)])
   .then(function([tests, whitelist]) {
@@ -19,7 +20,7 @@ Promise.all([utils.getTests(testDir), utils.getWhitelist(whitelistFile)])
         console.log(`> ${Math.round(100 * idx / total)}% complete`);
       }
 
-      return utils.runTest(test);
+      return utils.runTest(test, plugins);
     });
 
     return utils.interpret(results, whitelist);
