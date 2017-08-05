@@ -7,6 +7,7 @@ const utils = require("./run_test262_utils");
 const testDir = path.join(__dirname, "..", "build", "test262", "test");
 const whitelistFile = path.join(__dirname, "test262_whitelist.txt");
 const plugins = ["asyncGenerators", "objectRestSpread"];
+const shouldUpdate = process.argv.indexOf("--update-whitelist") > -1;
 
 Promise.all([utils.getTests(testDir), utils.getWhitelist(whitelistFile)])
   .then(function([tests, whitelist]) {
@@ -97,7 +98,14 @@ Promise.all([utils.getTests(testDir), utils.getWhitelist(whitelistFile)])
       console.log(badnewsDetails.join("\n").replace(/^/gm, "   "));
     }
 
-    process.exitCode = summary.passed ? 0 : 1;
+    if (shouldUpdate) {
+      return utils.updateWhitelist(whitelistFile, summary).then(function() {
+        console.log("");
+        console.log("Whitelist file updated.");
+      });
+    } else {
+      process.exitCode = summary.passed ? 0 : 1;
+    }
   })
   .catch(function(err) {
     console.error(err);

@@ -39,3 +39,6 @@ bootstrap-test262: clean
 
 test-test262:
 	node scripts/run_test262.js
+
+test-test262-update-whitelist:
+	node scripts/run_test262.js --update-whitelist

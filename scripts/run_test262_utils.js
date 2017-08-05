@@ -79,6 +79,19 @@ function readFile(fileName) {
   });
 }
 
+function writeFile(fileName, contents) {
+  return new Promise(function(resolve, reject) {
+    fs.writeFile(fileName, contents, { encoding: "utf-8" }, function(err) {
+      if (err) {
+        reject(err);
+        return;
+      }
+
+      resolve();
+    });
+  });
+}
+
 function readTest(fileName, testDir) {
   if (!testNamePattern.test(fileName)) {
     return Promise.resolve([]);
@@ -168,6 +181,39 @@ exports.getWhitelist = function(filename) {
         table[filename] = true;
         return table;
       }, Object.create(null));
+  });
+};
+
+exports.updateWhitelist = function(filename, summary) {
+  return readFile(filename).then(function(contents) {
+    const toRemove = summary.disallowed.success
+      .concat(summary.disallowed.failure)
+      .map(function(test) {
+        return test.id;
+      });
+    const toAdd = summary.disallowed.falsePositive
+      .concat(summary.disallowed.falseNegative)
+      .map(function(test) {
+        return test.id;
+      });
+    const newContents = contents
+      .split("\n")
+      .map(function(line) {
+        const testId = line.replace(/#.*$/, "").trim();
+
+        if (toRemove.indexOf(testId) > -1) {
+          return null;
+        }
+
+        return line;
+      })
+      .filter(function(line) {
+        return line !== null;
+      })
+      .concat(toAdd)
+      .join("\n");
+
+    return writeFile(filename, newContents);
   });
 };
 
