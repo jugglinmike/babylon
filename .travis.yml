@@ -37,7 +37,7 @@ matrix:
       env: JOB=babel-test
     - node_js: "lts/*"
       env: JOB=flow-test
-    - node_js: "lts/*"
+    - node_js: node
       env: JOB=test262-test
   allow_failures:
     - node_js: "lts/*"

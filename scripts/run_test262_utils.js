@@ -2,6 +2,13 @@
 
 const fs = require("fs");
 const path = require("path");
+const promisify = require("util.promisify");
+const pfs = {
+  readFile: promisify(fs.readFile),
+  writeFile: promisify(fs.writeFile),
+  readdir: promisify(fs.readdir),
+  stat: promisify(fs.stat)
+};
 
 const parse = require("..").parse;
 
@@ -29,66 +36,23 @@ function hasEarlyError(src) {
   );
 }
 
-function readDir(dirName) {
-  return new Promise(function(resolve, reject) {
-    fs.readdir(dirName, function(err, contents) {
-      if (err) {
-        reject(err);
-        return;
-      }
-
-      Promise.all(
-        contents.map(function(name) {
-          return findTests(path.join(dirName, name));
-        })
-      )
-        .then(flatten)
-        .then(resolve, reject);
-    });
+function readDirDeep(dirName) {
+  return pfs.readdir(dirName).then(function(contents) {
+    return Promise.all(
+      contents.map(function(name) {
+        return findTests(path.join(dirName, name));
+      })
+    ).then(flatten)
   });
 }
 
 function findTests(name) {
-  return new Promise(function(resolve, reject) {
-    fs.stat(name, function(err, stat) {
-      if (err) {
-        reject(err);
-        return;
-      }
+  return pfs.stat(name).then(function(stat) {
+    if (stat.isDirectory()) {
+      return readDirDeep(name);
+    }
 
-      if (stat.isDirectory()) {
-        readDir(name).then(resolve, reject);
-        return;
-      }
-
-      resolve(name);
-    });
-  });
-}
-
-function readFile(fileName) {
-  return new Promise(function(resolve, reject) {
-    fs.readFile(fileName, { encoding: "utf-8" }, function(err, contents) {
-      if (err) {
-        reject(err);
-        return;
-      }
-
-      resolve(contents);
-    });
-  });
-}
-
-function writeFile(fileName, contents) {
-  return new Promise(function(resolve, reject) {
-    fs.writeFile(fileName, contents, { encoding: "utf-8" }, function(err) {
-      if (err) {
-        reject(err);
-        return;
-      }
-
-      resolve();
-    });
+    return name;
   });
 }
 
@@ -97,7 +61,7 @@ function readTest(fileName, testDir) {
     return Promise.resolve([]);
   }
 
-  return readFile(fileName).then(function(contents) {
+  return pfs.readFile(fileName, "utf-8").then(function(contents) {
     return makeScenarios(path.relative(testDir, fileName), contents);
   });
 }
@@ -168,7 +132,7 @@ exports.runTest = function(test, plugins) {
 };
 
 exports.getWhitelist = function(filename) {
-  return readFile(filename).then(function(contents) {
+  return pfs.readFile(filename, "utf-8").then(function(contents) {
     return contents
       .split("\n")
       .map(function(line) {
@@ -185,7 +149,7 @@ exports.getWhitelist = function(filename) {
 };
 
 exports.updateWhitelist = function(filename, summary) {
-  return readFile(filename).then(function(contents) {
+  return pfs.readFile(filename, "utf-8").then(function(contents) {
     const toRemove = summary.disallowed.success
       .concat(summary.disallowed.failure)
       .map(function(test) {
@@ -213,7 +177,7 @@ exports.updateWhitelist = function(filename, summary) {
       .concat(toAdd)
       .join("\n");
 
-    return writeFile(filename, newContents);
+    return pfs.writeFile(filename, newContents, "utf-8");
   });
 };
 
