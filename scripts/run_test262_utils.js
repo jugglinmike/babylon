@@ -18,44 +18,6 @@ const onlyStrictPattern = /^\s*-\s*onlyStrict\s*$|^\s*flags\s*:.*\bonlyStrict\b/
 const rawPattern = /^\s*-\s*raw\s*$|^\s*flags\s*:.*\braw\b/m;
 const testNamePattern = /^(?!.*_FIXTURE).*\.[jJ][sS]$/;
 
-function flatten(array) {
-  const flattened = [];
-  array.forEach(function(element) {
-    if (Array.isArray(element)) {
-      flattened.push.apply(flattened, element);
-    } else {
-      flattened.push(element);
-    }
-  });
-  return flattened;
-}
-
-function hasEarlyError(src) {
-  return !!(
-    src.match(/^\s*negative:\s*$/m) && src.match(/^\s+phase:\s*early\s*$/m)
-  );
-}
-
-function readDirDeep(dirName) {
-  return pfs.readdir(dirName).then(function(contents) {
-    return Promise.all(
-      contents.map(function(name) {
-        return findTests(path.join(dirName, name));
-      })
-    ).then(flatten)
-  });
-}
-
-function findTests(name) {
-  return pfs.stat(name).then(function(stat) {
-    if (stat.isDirectory()) {
-      return readDirDeep(name);
-    }
-
-    return name;
-  });
-}
-
 function readTest(fileName, testDir) {
   if (!testNamePattern.test(fileName)) {
     return Promise.resolve([]);
@@ -104,31 +66,23 @@ function makeScenarios(fileName, testContent) {
   return scenarios;
 }
 
-exports.getTests = function(testDir) {
-  return findTests(testDir)
-    .then(function(testPaths) {
-      return Promise.all(
-        testPaths.map(function(path) {
-          return readTest(path, testDir);
-        })
-      );
-    })
-    .then(flatten);
-};
-
 exports.runTest = function(test, plugins) {
-  const sourceType = test.isModule ? "module" : "script";
+  const result = {
+    fileName: test.file,
+	id: test.file + "(" + test.scenario + ")",
+	content: test.contents,
+	expectedError: test.attrs.negative && test.attrs.negative.phase === "early"
+  };
+  const sourceType = test.attrs.flags.module ? "module" : "script";
 
   try {
-    parse(test.content, { sourceType: sourceType, plugins: plugins });
-    test.actualError = false;
+    parse(test.contents, { sourceType: sourceType, plugins: plugins });
+    result.actualError = false;
   } catch (err) {
-    test.actualError = true;
+    result.actualError = true;
   }
 
-  test.result = test.expectedError !== test.actualError ? "fail" : "pass";
-
-  return test;
+  return result;
 };
 
 exports.getWhitelist = function(filename) {

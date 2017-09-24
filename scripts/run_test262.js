@@ -4,27 +4,38 @@ const path = require("path");
 const chalk = require("chalk");
 const utils = require("./run_test262_utils");
 
-const testDir = path.join(__dirname, "..", "build", "test262", "test");
+const testDir = path.join(__dirname, "..", "build", "test262");
 const whitelistFile = path.join(__dirname, "test262_whitelist.txt");
 const plugins = ["asyncGenerators", "objectRestSpread", "optionalCatchBinding"];
 const shouldUpdate = process.argv.indexOf("--update-whitelist") > -1;
 
-Promise.all([utils.getTests(testDir), utils.getWhitelist(whitelistFile)])
-  .then(function([tests, whitelist]) {
-    const total = tests.length;
-    const reportInc = Math.floor(total / 20);
+const streamTests = require('../../test262-harness').streamTests;
 
-    console.log(`Now running ${total} tests...`);
+utils.getWhitelist(whitelistFile)
+  .then(function(whitelist) {
+    console.log(`Now running tests...`);
 
-    const results = tests.map(function(test, idx) {
-      if (idx % reportInc === 0) {
-        console.log(`> ${Math.round(100 * idx / total)}% complete`);
-      }
+    //const stream = streamTests(testDir, { paths: ['test'] });
+    //const stream = streamTests(testDir, { paths: ['test/language/expressions/function/param-dflt-yield-strict.js'] });
+    const stream = streamTests(testDir, { paths: ['test/language/block-scope/syntax/redeclaration/function-declaration-attempt-to-redeclare-with-function-declaration.js'] });
+    const results = [];
 
-      return utils.runTest(test, plugins);
+    stream.on('data', function(testObject) {
+	  if (/_FIXTURE/.test(testObject.file)) {
+		return;
+	  }
+	  testObject.file = path.relative(testDir + '/test', testObject.file);
+      results.push(utils.runTest(testObject, plugins));
+	  //console.log(results[0].content);
+	  //process.exit();
     });
 
-    return utils.interpret(results, whitelist);
+    return new Promise(function(resolve, reject) {
+       stream.on('error', reject);
+       stream.on('end', function() {
+         resolve(utils.interpret(results, whitelist));
+       });
+    });
   })
   .then(function(summary) {
     const goodnews = [
