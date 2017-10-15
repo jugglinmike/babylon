@@ -15,19 +15,12 @@ utils.getWhitelist(whitelistFile)
   .then(function(whitelist) {
     console.log(`Now running tests...`);
 
-    //const stream = streamTests(testDir, { paths: ['test'] });
-    //const stream = streamTests(testDir, { paths: ['test/language/expressions/function/param-dflt-yield-strict.js'] });
-    const stream = streamTests(testDir, { paths: ['test/language/block-scope/syntax/redeclaration/function-declaration-attempt-to-redeclare-with-function-declaration.js'] });
+    const stream = streamTests(testDir);
     const results = [];
 
     stream.on('data', function(testObject) {
-	  if (/_FIXTURE/.test(testObject.file)) {
-		return;
-	  }
-	  testObject.file = path.relative(testDir + '/test', testObject.file);
+      testObject.file = path.relative('test', testObject.file);
       results.push(utils.runTest(testObject, plugins));
-	  //console.log(results[0].content);
-	  //process.exit();
     });
 
     return new Promise(function(resolve, reject) {

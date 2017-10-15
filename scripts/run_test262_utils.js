@@ -1,77 +1,20 @@
 "use strict";
 
 const fs = require("graceful-fs");
-const path = require("path");
 const promisify = require("util.promisify");
 const pfs = {
   readFile: promisify(fs.readFile),
-  writeFile: promisify(fs.writeFile),
-  readdir: promisify(fs.readdir),
-  stat: promisify(fs.stat)
+  writeFile: promisify(fs.writeFile)
 };
 
 const parse = require("..").parse;
 
-const modulePattern = /^\s*-\s*module\s*$|^\s*flags\s*:.*\bmodule\b/m;
-const noStrictPattern = /^\s*-\s*noStrict\s*$|^\s*flags\s*:.*\bnoStrict\b/m;
-const onlyStrictPattern = /^\s*-\s*onlyStrict\s*$|^\s*flags\s*:.*\bonlyStrict\b/m;
-const rawPattern = /^\s*-\s*raw\s*$|^\s*flags\s*:.*\braw\b/m;
-const testNamePattern = /^(?!.*_FIXTURE).*\.[jJ][sS]$/;
-
-function readTest(fileName, testDir) {
-  if (!testNamePattern.test(fileName)) {
-    return Promise.resolve([]);
-  }
-
-  return pfs.readFile(fileName, "utf-8").then(function(contents) {
-    return makeScenarios(path.relative(testDir, fileName), contents);
-  });
-}
-
-function makeScenarios(fileName, testContent) {
-  const scenarios = [];
-  const base = {
-    fileName: fileName,
-    isModule: modulePattern.test(testContent),
-    expectedError: hasEarlyError(testContent),
-  };
-  const isNoStrict = noStrictPattern.test(testContent);
-  const isOnlyStrict = onlyStrictPattern.test(testContent);
-  const isRaw = rawPattern.test(testContent);
-
-  if (!isOnlyStrict) {
-    scenarios.push(
-      Object.assign(
-        {
-          id: fileName + "(default)",
-          content: testContent,
-        },
-        base
-      )
-    );
-  }
-
-  if (!isNoStrict && !isRaw) {
-    scenarios.push(
-      Object.assign(
-        {
-          id: fileName + "(strict mode)",
-          content: "'use strict';\n" + testContent,
-        },
-        base
-      )
-    );
-  }
-
-  return scenarios;
-}
-
 exports.runTest = function(test, plugins) {
   const result = {
     fileName: test.file,
-	id: test.file + "(" + test.scenario + ")",
-	content: test.contents,
-	expectedError: test.attrs.negative && test.attrs.negative.phase === "early"
+    id: test.file + "(" + test.scenario + ")",
+    content: test.contents,
+    expectedError: test.attrs.negative && test.attrs.negative.phase === "early"
   };
   const sourceType = test.attrs.flags.module ? "module" : "script";
 
