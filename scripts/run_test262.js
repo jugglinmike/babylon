@@ -9,13 +9,13 @@ const whitelistFile = path.join(__dirname, "test262_whitelist.txt");
 const plugins = ["asyncGenerators", "objectRestSpread", "optionalCatchBinding"];
 const shouldUpdate = process.argv.indexOf("--update-whitelist") > -1;
 
-const streamTests = require('../../test262-harness').streamTests;
+const TestStream = require('../../test262-stream');
 
 utils.getWhitelist(whitelistFile)
   .then(function(whitelist) {
     console.log(`Now running tests...`);
 
-    const stream = streamTests(testDir);
+    const stream = new TestStream(testDir);
     const results = [];
 
     stream.on('data', function(testObject) {
